@@ -110,9 +110,9 @@ async def test_writes_are_not_retried_on_5xx():
 
 async def test_list_paging_and_from_alias(monkeypatch):
     rec = Recorder({"company": {"results": [{"id": "c1"}, {"id": "c2"}], "total": 12}})
-    result = await _call(monkeypatch, rec, "salesbuildr_companies_list", {"query": "acme", "from": 4, "size": 2})
+    result = await _call(monkeypatch, rec, "salesbuildr_companies_list", {"query": "example", "from": 4, "size": 2})
     params = rec.requests[0].url.params
-    assert (params["query"], params["from"], params["size"], params["sort"]) == ("acme", "4", "2", "-updatedDate")
+    assert (params["query"], params["from"], params["size"], params["sort"]) == ("example", "4", "2", "-updatedDate")
     assert (result["count"], result["total"], result["has_more"], result["next_from"]) == (2, 12, True, 6)
 
 
@@ -140,14 +140,14 @@ async def test_filter_values_with_separators_are_rejected(monkeypatch):
 
 async def test_company_create_maps_fields(monkeypatch):
     rec = Recorder({"POST company": {"id": "c1"}})
-    args = {"name": "Acme", "domain": "acme.example", "address": "1 Main St", "city": "Springfield", "zip": "12345",
+    args = {"name": "Example Co", "domain": "example.com", "address": "1 Main St", "city": "Springfield", "zip": "12345",
             "phone": "555-0100", "notes": "VIP", "number": "C-100", "type": "customer"}
     await _call(monkeypatch, rec, "salesbuildr_companies_create", args)
     assert body(rec.calls("POST", "company")[0]) == {
-        "name": "Acme",
+        "name": "Example Co",
         "number": "C-100",
         "type": "customer",
-        "website": "https://acme.example",
+        "website": "https://example.com",
         "telephone": "555-0100",
         "stickyNote": "VIP",
         "address": {"street": "1 Main St", "city": "Springfield", "zip": "12345"},
@@ -155,13 +155,13 @@ async def test_company_create_maps_fields(monkeypatch):
 
 
 async def test_company_update_merges_with_current_state(monkeypatch):
-    current = {"id": "c1", "name": "Acme", "type": "customer", "website": "https://acme.example", "telephone": "1",
+    current = {"id": "c1", "name": "Example Co", "type": "customer", "website": "https://example.com", "telephone": "1",
                "address": {"street": "1 Main St", "city": "Springfield", "zip": "12345", "country": "US"},
                "labels": ["vip"], "social": {"x": "y"}}
     rec = Recorder({"GET company/c1": current, "PUT company/c1": {"id": "c1"}})
     await _call(monkeypatch, rec, "salesbuildr_companies_update", {"id": "c1", "phone": "2", "city": "Shelbyville"})
     sent = body(rec.calls("PUT", "company/c1")[0])
-    assert sent["telephone"] == "2" and sent["name"] == "Acme" and sent["labels"] == ["vip"]
+    assert sent["telephone"] == "2" and sent["name"] == "Example Co" and sent["labels"] == ["vip"]
     assert sent["address"] == {"street": "1 Main St", "city": "Shelbyville", "zip": "12345", "country": "US"}
     assert "social" not in sent and "id" not in sent
 
@@ -188,7 +188,7 @@ async def test_delete_needs_confirm(monkeypatch, tool, path):
 
 
 async def test_contact_update_merges(monkeypatch):
-    current = {"id": "p1", "firstName": "Jane", "lastName": "Doe", "email": "jane@example.com", "companyId": "c1", "companyName": "Acme"}
+    current = {"id": "p1", "firstName": "Jane", "lastName": "Doe", "email": "jane@example.com", "companyId": "c1", "companyName": "Example Co"}
     rec = Recorder({"GET contact/p1": current, "PUT contact/p1": {"id": "p1"}})
     await _call(monkeypatch, rec, "salesbuildr_contacts_update", {"id": "p1", "email": "j.doe@example.com"})
     assert body(rec.calls("PUT", "contact/p1")[0]) == {
