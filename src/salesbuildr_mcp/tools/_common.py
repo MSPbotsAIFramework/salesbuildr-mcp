@@ -121,6 +121,8 @@ async def search(
             "from": offset,
             "has_more": more,
             "next_from": offset + len(items) if more else None,
+            # A cut result continues right after the last record returned.
+            "_resume": {"key": "next_from", "start": offset},
         }
     )
 
